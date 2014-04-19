@@ -1,68 +1,131 @@
-console.log 'test start'
+describe 'Momic.Collection', ->
+  describe '.dequal', ->
+    it 'should fill left statements', ->
+      expect(Momic.Collection.dequal 'foo', 'foo').eq true
+      expect(Momic.Collection.dequal 'foo', 'bar').eq false
+      expect(Momic.Collection.dequal {a: 1}, {a: 1}).eq true
+      expect(Momic.Collection.dequal {a: 1}, {a: 2}).eq false
+      expect(Momic.Collection.dequal {a: 1}, {a: 1, b: 2}).eq true
+      expect(Momic.Collection.dequal {a: 1, b: ''}, {a: 1}).eq false
+      expect(Momic.Collection.dequal {a: {b: 1}}, {a: {b: 1}}).eq true
+      expect(Momic.Collection.dequal {a: {b: 1}}, 1).eq false
+      expect(Momic.Collection.dequal {a: {b: 1}}, {}).eq false
+      expect(Momic.Collection.dequal {a: {b: 1}, c: 2}, {a: {b: 1}, c: 2}).eq true
+      expect(Momic.Collection.dequal {a: {b: 1}, c: 3}, {a: {b: 1}, c: 2}).eq false
 
-expect = (a, b) ->
-  if a is b then console.log "#{a} and #{b} passed"
-  else throw "#{a} expected to #{b}"
+  context 'with localStorageWrapper', ->
+    beforeEach (done) ->
+      @db = null
+      localforage.setDriver('localStorageWrapper')
+      localforage.clear =>
+        @db = new Momic.DB
+          name: 'app'
+          collections:
+            items: {}
+        @db.init().then => done()
 
-expect true, Momic.Collection.dequal 'foo', 'foo'
-expect false, Momic.Collection.dequal 'foo', 'bar'
-expect true, Momic.Collection.dequal {a: 1}, {a: 1}
-expect false, Momic.Collection.dequal {a: 1}, {a: 2}
-expect true, Momic.Collection.dequal {a: 1}, {a: 1, b: 2}
-expect false, Momic.Collection.dequal {a: 1, b: ''}, {a: 1}
-expect true, Momic.Collection.dequal {a: {b: 1}}, {a: {b: 1}}
-expect false, Momic.Collection.dequal {a: {b: 1}}, 1
-expect false, Momic.Collection.dequal {a: {b: 1}}, {}
-expect true, Momic.Collection.dequal {a: {b: 1}, c: 2}, {a: {b: 1}, c: 2}
-expect false, Momic.Collection.dequal {a: {b: 1}, c: 3}, {a: {b: 1}, c: 2}
+    describe '#insert', ->
+      it 'should insert item', (done) ->
+        @db.items.insert({foo: 1, bar: 2, baz: 3}).then =>
+          @db.items.findOne().then (item) =>
+            expect(item.foo).eq 1
+            expect(item.bar).eq 2
+            expect(item.baz).eq 3
+            done()
 
-# Chrome 35's indexedDb is broken. work around
-localforage.setDriver('localStorageWrapper')
-window.db = new Momic.DB
-  name: 'app'
-  collections:
-    items:
-      # if hasInstance true, find becomes fast but has pressure to memory
-      hasInstance: true # default true
-      # if hasPersistence true, storage it.
-      # hasInstance or hasPersistence must be true.
-      hasPersistence: true # default
-      autoSave: true
-      # schema: # TODO: not implemented yet
-      #   itemType: String
-      #   name: String
-      #   value: Number
+      it 'should insert one item with object as argument', (done) ->
+        @db.items.insert({foo: 'bar'}).then =>
+          expect(@db.items.count()).eq 1
+          done()
 
-localforage.clear =>
-  db.init().then =>
-    a = db.items.insert({itemType: 'weapon', name: 'ひのきのぼう', value: 10})
-    b = db.items.insert([
-      { itemType: 'weapon', name: 'てつのつるぎ', value: 50}
-      { itemType: 'weapon', name: 'はがねのつるぎ', value: 120}
-    ])
+      it 'should insert one item with array as argument', (done) ->
+        @db.items.insert([{foo: 'bar'}, {foo: 'baz'}]).then =>
+          expect(@db.items.count()).eq 2
+          done()
 
-    Promise.all([a,b]).then =>
-      console.log db.items.count() #=> 3
-      db.items.find().then (items) =>
-        console.log 'expect all', items
-      db.items.find({name: 'てつのつるぎ'}).then ([item]) =>
-        console.log 'expect てつのつるぎ', item
-      db.items.findOne({name: 'てつのつるぎ'}).then (item) =>
-        console.log 'expect てつのつるぎ', item
+      it 'should create id at inserting unless id', (done) ->
+        @db.items.insert({foo: 'bar'}).then =>
+          @db.items.findOne().then (item) =>
+            expect(item).to.have.property('id').that.is.a('string')
+            done()
 
-      db.items.find((item) -> item.value > 30).then (items) =>
-        console.log 'expect てつのつるぎ はがねのつるぎ', items
+      it 'should not create id at inserting with id', (done) ->
+        @db.items.insert({foo: 'bar', id: 'thisisid'}).then =>
+          @db.items.findOne().then (item) =>
+            expect(item.id).eq 'thisisid'
+            done()
 
-      db.items.remove((item) -> item.value > 30).then =>
-      # removing.then =>
-        console.log 'removed'
-        db.items.find().then (removed) =>
-          console.log 'after removed', removed
-          expect 1, removed.length
-          id = removed[0].id
-          console.log id
-          db.items.update(id: id, value: 42).then =>
-            console.log 'updated!'
-            db.items.findOne(id: id).then (item) =>
-              console.log 'expect updated'
-              expect 42, item.value
+    describe '#find', ->
+      beforeEach (done) ->
+        @db.items.insert([
+          {foo: 1, bar: 'a'}
+          {foo: 2, bar: 'b'}
+          {foo: 3, bar: 'c'}
+        ]).then => done()
+
+      it 'should fetch all with no args', (done) ->
+        @db.items.find().then =>
+          expect(@db.items.count()).eq 3
+          done()
+
+      it 'should fetch items by json argument', (done) ->
+        @db.items.find({foo: 1}).then ([item]) =>
+          expect(item.foo).eq 1
+          expect(item.bar).eq 'a'
+          done()
+
+      it 'should fetch items by filter function', (done) ->
+        @db.items.find((item) => item.foo > 1).then (items) =>
+          expect(items.length).eq 2
+          done()
+
+    describe '#findOne', ->
+      beforeEach (done) ->
+        @db.items.insert([
+          {foo: 1, bar: 'a'}
+          {foo: 2, bar: 'b'}
+          {foo: 3, bar: 'c'}
+        ]).then => done()
+
+      it 'should fetch one item of #find result', (done) ->
+        @db.items.findOne((item) => item.foo > 2).then (item) =>
+          expect(item.foo).eq 3
+          done()
+
+    describe '#remove', ->
+      beforeEach (done) ->
+        @db.items.insert([
+          {foo: 1, bar: 'a'}
+          {foo: 2, bar: 'b'}
+          {foo: 3, bar: 'c'}
+        ]).then => done()
+
+      it 'should remove items by same argument with #find', (done) ->
+        @db.items.remove((item) => item.foo > 1).then =>
+          @db.items.find().then (items) =>
+            expect(items.length).eq 1
+            done()
+
+    describe '#update', ->
+      beforeEach (done) ->
+        @db.items.insert([
+          {foo: 1, bar: 'a'}
+          {foo: 2, bar: 'b'}
+          {foo: 3, bar: 'c'}
+        ]).then => done()
+
+      it 'should rewrite object by id', (done) ->
+        @db.items.findOne(foo: 1).then (item) =>
+          @db.items.update(id: item.id, foo: 42).then =>
+            @db.items.findOne(bar: 'a').then (modified) =>
+              expect(modified.foo).eq 42
+              expect(modified.bar).eq 'a'
+              done()
+
+      it 'should rewrite object by id with array argument', (done) ->
+        @db.items.find().then (items) =>
+          insertions = items.map (i) => id: i.id, foo: 42
+          @db.items.update(insertions).then =>
+            @db.items.find().then (modifiedItems) =>
+              expect(modifiedItems.map (i) -> i.foo).deep.equal [42,42,42]
+              done()
