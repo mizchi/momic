@@ -148,7 +148,7 @@ class Momic.Collection
     localforage.getItem @key, (content) =>
       if content?
         try
-          cottent = JSON.parse(content)
+          content = JSON.parse(content)
         catch e
           throw "#{@key} is not used as momic repository"
       else
