@@ -167,18 +167,29 @@ class Momic.DB
 
   constructor: (opts) ->
     @initialized = false
-    @prefix = opts.name
+    @prefix = opts?.name or ''
     @storage = opts?.storage or 'localforage'
-    @collections =
-      for key, colOpts of opts.collections
-        colOpts.storage ?= @storage
-        @[key] = new Momic.Collection(@collectionKey(key), colOpts)
+    @collections = []
+    for key, colOpts of opts?.collections
+      @addCollection(key, colOpts)
 
   init: => defer (done) =>
     inits = @collections.map (col) -> col.init()
     Promise.all(inits).then =>
       @initialized = true
       done()
+
+  addCollection: (key, colOpts) ->
+    if key in ['initialized', 'prefix', 'storage', 'init', 'collectionKey', 'addCollection']
+      throw new Error("'#{key}' is reserved word")
+    colOpts.storage ?= @storage
+    @[key] = new Momic.Collection(@collectionKey(key), colOpts)
+    @collections.push @[key]
+
+    if @initialized
+      defer (done)=> @[key].init().then -> done()
+    else
+      return @[key]
 
 if (typeof define) is 'function' and (typeof define.amd) is 'object' and define.amd
   define(Momic)
