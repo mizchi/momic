@@ -41,7 +41,7 @@ class Momic.Collection
     @hasPersistence ?= true
     @hasInstance ?= true
 
-    unless @hasPersistence or @hasPersistence
+    unless @hasInstance or @hasPersistence
       throw new Error('hasInstance or hasPersistence must be true')
     @_count = 0
     @_instance = null
