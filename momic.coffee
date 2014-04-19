@@ -1,8 +1,4 @@
-defer = (f) ->
-  d = $?.Deferred() or Deferred?()
-  f(d)
-  d
-
+defer = (f) -> new Promise (done, reject) => f(done, reject)
 uuid = =>
   s4 = ->
     Math.floor((1 + Math.random()) * 0x10000)
@@ -53,27 +49,27 @@ class Momic.Collection
   _updateCount: (@_count) =>
   count: => @_count
 
-  load: => defer (d) =>
-    localforage.getItem(@key).then (content) => d.resolve(content)
+  load: => defer (done) =>
+    localforage.getItem(@key).then (content) => done(content)
 
   updateInstanceIfNeeded: (instance) =>
     @_instance = instance if @hasInstance
 
-  loadContent: => defer (d) =>
+  loadContent: => defer (done) =>
     if @hasInstance and @_instance
-      d.resolve(@_instance)
+      done(@_instance)
     else
-      @load().then (content) => d.resolve(content)
+      @load().then (content) => done(content)
 
-  save: (content) => defer (d) =>
+  save: (content) => defer (done) =>
     throw "`#{@key}` collection doesn't have storage" unless @hasPersistence
     tosave = content ? @_instance
     localforage.setItem(@key, tosave).then =>
       @resolved = true
       @updateInstanceIfNeeded(tosave)
-      d.resolve()
+      done()
 
-  update: (obj) => defer (d) =>
+  update: (obj) => defer (done) =>
     array = if obj.length? then obj else [obj]
     @loadContent().then (content) =>
       # TODO: fix bad performance
@@ -84,11 +80,9 @@ class Momic.Collection
               content[n][key] = val
             break
 
-      @save(content).done =>
-        d.resolve()
+      @save(content).then => done()
 
-  insert: (obj) => defer (d) =>
-    # array = if obj.length? then obj else [obj]
+  insert: (obj) => defer (done) =>
     array =
       if obj.length
         obj.map (i) ->
@@ -107,19 +101,19 @@ class Momic.Collection
       if @autoSave
         @save().then =>
           @_instance = content if @hasInstance
-          d.resolve()
+          done()
       else
         @resolved = false
         @_instance = content if @hasInstance
-        d.resolve()
+        done()
 
-  drop: => defer (d) =>
-    localforage.setItem(@key, '[]').then => d.resolve()
+  drop: => defer (done) =>
+    localforage.setItem(@key, '[]').then => done()
 
-  findOne: (func_or_obj) => defer (d) =>
-    @find(func_or_obj).then ([first]) => d.resolve(first)
+  findOne: (func_or_obj) => defer (done) =>
+    @find(func_or_obj).then ([first]) => done(first)
 
-  find: (func_or_obj = null) => defer (d) =>
+  find: (func_or_obj = null) => defer (done) =>
     @loadContent().then (content) =>
       results =
         if not func_or_obj?
@@ -128,23 +122,23 @@ class Momic.Collection
           content.filter (item) => func(item)
         else if (queryObj = func_or_obj) instanceof Object
           content.filter (item) => dequal(queryObj, item)
-      d.resolve(results)
+      done(results)
 
   remove: (func_or_obj) =>
-    d = defer (d) =>
+    d = defer (done) =>
       c = null
-      loading = defer (d2) =>
+      loading = defer (done) =>
         @loadContent().then (content) => # TODO: check when rewrite to Promise
           c = content
-          d2.resolve(content)
+          done(content)
 
       loading.then (content) =>
         @find(func_or_obj).then (toremove) =>
           remove_ids = toremove.map (i) => i.id
           content = content.filter (item) => item.id not in remove_ids
-          @save(content).then => d.resolve()
+          @save(content).then => done()
 
-  init: => defer (d) =>
+  init: => defer (done) =>
     localforage.getItem @key, (content) =>
       if content?
         try
@@ -156,10 +150,10 @@ class Momic.Collection
       @_instance = content if @hasInstance
 
       if @hasPersistence
-        @save(content).then => d.resolve()
+        @save(content).then => done()
       else
         @_updateCount(content.length)
-        d.resolve()
+        done()
 
 class Momic.DB
   collectionKey: (collectionName) =>
@@ -174,11 +168,11 @@ class Momic.DB
         colOpts.storage ?= @storage
         @[key] = new Momic.Collection(@collectionKey(key), colOpts)
 
-  init: => defer (d) =>
+  init: => defer (done) =>
     inits = @collections.map (col) -> col.init()
     Promise.all(inits).then =>
       @initialized = true
-      d.resolve()
+      done()
 
 if (typeof define) is 'function' and (typeof define.amd) is 'object' and define.amd
   define(Momic)

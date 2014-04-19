@@ -5,10 +5,11 @@
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
   defer = function(f) {
-    var d;
-    d = (typeof $ !== "undefined" && $ !== null ? $.Deferred() : void 0) || (typeof Deferred === "function" ? Deferred() : void 0);
-    f(d);
-    return d;
+    return new Promise((function(_this) {
+      return function(done, reject) {
+        return f(done, reject);
+      };
+    })(this));
   };
 
   uuid = (function(_this) {
@@ -111,9 +112,9 @@ function clone(obj) {
 
     Collection.prototype.load = function() {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           return localforage.getItem(_this.key).then(function(content) {
-            return d.resolve(content);
+            return done(content);
           });
         };
       })(this));
@@ -127,12 +128,12 @@ function clone(obj) {
 
     Collection.prototype.loadContent = function() {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           if (_this.hasInstance && _this._instance) {
-            return d.resolve(_this._instance);
+            return done(_this._instance);
           } else {
             return _this.load().then(function(content) {
-              return d.resolve(content);
+              return done(content);
             });
           }
         };
@@ -141,7 +142,7 @@ function clone(obj) {
 
     Collection.prototype.save = function(content) {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           var tosave;
           if (!_this.hasPersistence) {
             throw "`" + _this.key + "` collection doesn't have storage";
@@ -150,7 +151,7 @@ function clone(obj) {
           return localforage.setItem(_this.key, tosave).then(function() {
             _this.resolved = true;
             _this.updateInstanceIfNeeded(tosave);
-            return d.resolve();
+            return done();
           });
         };
       })(this));
@@ -158,7 +159,7 @@ function clone(obj) {
 
     Collection.prototype.update = function(obj) {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           var array;
           array = obj.length != null ? obj : [obj];
           return _this.loadContent().then(function(content) {
@@ -176,8 +177,8 @@ function clone(obj) {
                 }
               }
             }
-            return _this.save(content).done(function() {
-              return d.resolve();
+            return _this.save(content).then(function() {
+              return done();
             });
           });
         };
@@ -186,7 +187,7 @@ function clone(obj) {
 
     Collection.prototype.insert = function(obj) {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           var array, ret;
           array = obj.length ? obj.map(function(i) {
             var ret;
@@ -208,14 +209,14 @@ function clone(obj) {
                 if (_this.hasInstance) {
                   _this._instance = content;
                 }
-                return d.resolve();
+                return done();
               });
             } else {
               _this.resolved = false;
               if (_this.hasInstance) {
                 _this._instance = content;
               }
-              return d.resolve();
+              return done();
             }
           });
         };
@@ -224,9 +225,9 @@ function clone(obj) {
 
     Collection.prototype.drop = function() {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           return localforage.setItem(_this.key, '[]').then(function() {
-            return d.resolve();
+            return done();
           });
         };
       })(this));
@@ -234,11 +235,11 @@ function clone(obj) {
 
     Collection.prototype.findOne = function(func_or_obj) {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           return _this.find(func_or_obj).then(function(_arg) {
             var first;
             first = _arg[0];
-            return d.resolve(first);
+            return done(first);
           });
         };
       })(this));
@@ -249,7 +250,7 @@ function clone(obj) {
         func_or_obj = null;
       }
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           return _this.loadContent().then(function(content) {
             var func, queryObj, results;
             results = func_or_obj == null ? content : (func = func_or_obj) instanceof Function ? content.filter(function(item) {
@@ -257,7 +258,7 @@ function clone(obj) {
             }) : (queryObj = func_or_obj) instanceof Object ? content.filter(function(item) {
               return dequal(queryObj, item);
             }) : void 0;
-            return d.resolve(results);
+            return done(results);
           });
         };
       })(this));
@@ -266,13 +267,13 @@ function clone(obj) {
     Collection.prototype.remove = function(func_or_obj) {
       var d;
       return d = defer((function(_this) {
-        return function(d) {
+        return function(done) {
           var c, loading;
           c = null;
-          loading = defer(function(d2) {
+          loading = defer(function(done) {
             return _this.loadContent().then(function(content) {
               c = content;
-              return d2.resolve(content);
+              return done(content);
             });
           });
           return loading.then(function(content) {
@@ -286,7 +287,7 @@ function clone(obj) {
                 return _ref = item.id, __indexOf.call(remove_ids, _ref) < 0;
               });
               return _this.save(content).then(function() {
-                return d.resolve();
+                return done();
               });
             });
           });
@@ -296,7 +297,7 @@ function clone(obj) {
 
     Collection.prototype.init = function() {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           return localforage.getItem(_this.key, function(content) {
             var cottent, e;
             if (content != null) {
@@ -316,11 +317,11 @@ function clone(obj) {
             }
             if (_this.hasPersistence) {
               return _this.save(content).then(function() {
-                return d.resolve();
+                return done();
               });
             } else {
               _this._updateCount(content.length);
-              return d.resolve();
+              return done();
             }
           });
         };
@@ -360,14 +361,14 @@ function clone(obj) {
 
     DB.prototype.init = function() {
       return defer((function(_this) {
-        return function(d) {
+        return function(done) {
           var inits;
           inits = _this.collections.map(function(col) {
             return col.init();
           });
           return Promise.all(inits).then(function() {
             _this.initialized = true;
-            return d.resolve();
+            return done();
           });
         };
       })(this));

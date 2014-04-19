@@ -50,11 +50,11 @@ localforage.clear =>
       db.items.findOne({name: 'てつのつるぎ'}).then (item) =>
         console.log 'expect てつのつるぎ', item
 
-      db.items.find((item) -> item.value > 30).done (items) =>
+      db.items.find((item) -> item.value > 30).then (items) =>
         console.log 'expect てつのつるぎ はがねのつるぎ', items
 
-      removing = db.items.remove((item) -> item.value > 30)
-      removing.done =>
+      db.items.remove((item) -> item.value > 30).then =>
+      # removing.then =>
         console.log 'removed'
         db.items.find().then (removed) =>
           console.log 'after removed', removed

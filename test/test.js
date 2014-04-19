@@ -122,7 +122,6 @@
           }
         ]);
         return Promise.all([a, b]).then(function() {
-          var removing;
           console.log(db.items.count());
           db.items.find().then(function(items) {
             return console.log('expect all', items);
@@ -141,13 +140,12 @@
           });
           db.items.find(function(item) {
             return item.value > 30;
-          }).done(function(items) {
+          }).then(function(items) {
             return console.log('expect てつのつるぎ はがねのつるぎ', items);
           });
-          removing = db.items.remove(function(item) {
+          return db.items.remove(function(item) {
             return item.value > 30;
-          });
-          return removing.done(function() {
+          }).then(function() {
             console.log('removed');
             return db.items.find().then(function(removed) {
               var id;
