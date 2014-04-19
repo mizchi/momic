@@ -1,0 +1,25 @@
+{
+  "name": "momic",
+  "version": "0.0.0",
+  "description": "`momic.js` is mongo shell like storage API based on localforage.",
+  "main": "momic.js",
+  "dependencies": {
+    "mocha-phantomjs": "~3.3.2",
+    "chai": "~1.9.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "build": "./node_modules/.bin/coffee -c momic.coffee test/test.html",
+    "test": "./node_modules/.bin/mocha-phantomjs test/test.html"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mizchi/momic.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mizchi/momic/issues"
+  },
+  "homepage": "https://github.com/mizchi/momic"
+}
