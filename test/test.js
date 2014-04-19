@@ -92,18 +92,11 @@
 
   window.db = new Momic.DB({
     name: 'app',
-    storage: 'localforage',
     collections: {
       items: {
         hasInstance: true,
         hasPersistence: true,
-        storage: 'localforage',
-        autoSave: true,
-        schema: {
-          itemType: String,
-          name: String,
-          value: Number
-        }
+        autoSave: true
       }
     }
   });

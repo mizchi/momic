@@ -16,10 +16,10 @@ expect false, Momic.Collection.dequal {a: {b: 1}}, {}
 expect true, Momic.Collection.dequal {a: {b: 1}, c: 2}, {a: {b: 1}, c: 2}
 expect false, Momic.Collection.dequal {a: {b: 1}, c: 3}, {a: {b: 1}, c: 2}
 
+# Chrome 35's indexedDb is broken. work around
 localforage.setDriver('localStorageWrapper')
 window.db = new Momic.DB
   name: 'app'
-  storage: 'localforage' # default localforage
   collections:
     items:
       # if hasInstance true, find becomes fast but has pressure to memory
@@ -27,12 +27,11 @@ window.db = new Momic.DB
       # if hasPersistence true, storage it.
       # hasInstance or hasPersistence must be true.
       hasPersistence: true # default
-      storage: 'localforage' # default is db's storage
       autoSave: true
-      schema:
-        itemType: String
-        name: String
-        value: Number
+      # schema: # TODO: not implemented yet
+      #   itemType: String
+      #   name: String
+      #   value: Number
 
 localforage.clear =>
   db.init().then =>
