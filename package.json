@@ -13,8 +13,8 @@
     "bower": "^1.3.2"
   },
   "scripts": {
-    "build": "./node_modules/.bin/coffee -c momic.coffee test/test.html",
-    "test": "./node_modules/.bin/mocha-phantomjs test/test.html"
+    "build": "./node_modules/.bin/coffee -c momic.coffee && ./node_modules/.bin/coffee -c test/test.coffee",
+    "test": "npm run-script build && ./node_modules/.bin/mocha-phantomjs test/test.html"
   },
   "repository": {
     "type": "git",
