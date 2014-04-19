@@ -15,8 +15,6 @@
   "main": "momic.js",
   "dependencies": {
     "localforage": "~0.4.0",
-    "jquery": "~2.1.0",
-    "simply-deferred": "~3.0.0",
-    "oboe": "~1.14.3"
+    "jquery": "~2.1.0"
   }
 }
