@@ -14,8 +14,8 @@
     "coffee-script": "~1.7.1"
   },
   "scripts": {
-    "build": "./node_modules/.bin/coffee -c momic.coffee test/test.html",
-    "test": "./node_modules/.bin/mocha-phantomjs test/test.html"
+    "build": "./node_modules/.bin/coffee -c momic.coffee && ./node_modules/.bin/coffee -c test/test.coffee",
+    "test": "npm run-script build && ./node_modules/.bin/mocha-phantomjs test/test.html"
   },
   "repository": {
     "type": "git",
