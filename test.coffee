@@ -55,10 +55,15 @@ localforage.clear =>
         console.log 'expect てつのつるぎ はがねのつるぎ', items
 
       removing = db.items.remove((item) -> item.value > 30)
-      # setTimeout =>
       removing.done =>
         console.log 'removed'
         db.items.find().then (removed) =>
           console.log 'after removed', removed
           expect 1, removed.length
-      # , 100
+          id = removed[0].id
+          console.log id
+          db.items.update(id: id, value: 42).then =>
+            console.log 'updated!'
+            db.items.findOne(id: id).then (item) =>
+              console.log 'expect updated'
+              expect 42, item.value

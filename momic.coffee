@@ -37,7 +37,7 @@ dequal = (left, right) ->
         dequal(left[key], right[key])
   (results.filter (item) -> item).length is results.length
 
-window.Momic = {}
+Momic = {}
 class Momic.Collection
   @dequal = dequal
   constructor: (@key, {@schema, @hasInstance, @hasPersistence, @endpoint, @autoSave}) ->
@@ -71,8 +71,21 @@ class Momic.Collection
     localforage.setItem(@key, tosave).then =>
       @resolved = true
       @updateInstanceIfNeeded(tosave)
-      console.log 'tosave length', tosave.length
       d.resolve()
+
+  update: (obj) => defer (d) =>
+    array = if obj.length? then obj else [obj]
+    @loadContent().then (content) =>
+      # TODO: fix bad performance
+      for item in array
+        for c, n in content
+          if c.id is item.id
+            for key, val of item
+              content[n][key] = val
+            break
+
+      @save(content).done =>
+        d.resolve()
 
   insert: (obj) => defer (d) =>
     # array = if obj.length? then obj else [obj]
@@ -126,11 +139,9 @@ class Momic.Collection
           d2.resolve(content)
 
       loading.then (content) =>
-        console.log 3
         @find(func_or_obj).then (toremove) =>
           remove_ids = toremove.map (i) => i.id
           content = content.filter (item) => item.id not in remove_ids
-          console.log 'save done!'
           @save(content).then => d.resolve()
 
   init: => defer (d) =>
@@ -168,3 +179,8 @@ class Momic.DB
     Promise.all(inits).then =>
       @initialized = true
       d.resolve()
+
+if (typeof define) is 'function' and (typeof define.amd) is 'object' and define.amd
+  define(Momic)
+else
+  window.Momic = Momic

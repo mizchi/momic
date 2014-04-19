@@ -157,8 +157,23 @@
           return removing.done(function() {
             console.log('removed');
             return db.items.find().then(function(removed) {
+              var id;
               console.log('after removed', removed);
-              return expect(1, removed.length);
+              expect(1, removed.length);
+              id = removed[0].id;
+              console.log(id);
+              return db.items.update({
+                id: id,
+                value: 42
+              }).then(function() {
+                console.log('updated!');
+                return db.items.findOne({
+                  id: id
+                }).then(function(item) {
+                  console.log('expect updated');
+                  return expect(42, item.value);
+                });
+              });
             });
           });
         });
