@@ -155,6 +155,24 @@
           })(this));
         });
       });
+      describe('#saved', function() {
+        beforeEach(function() {
+          return this.db.items.autoSave = false;
+        });
+        return it('should return false when items is not saved', function() {
+          expect(this.db.items.saved()).eq(true);
+          expect(this.db.items.count()).eq(0);
+          return this.db.items.insert().then((function(_this) {
+            return function() {
+              expect(_this.db.items.saved()).eq(false);
+              expect(_this.db.items.count()).eq(1);
+              return _this.db.items.save().then(function() {
+                return expect(_this.db.items.saved()).eq(true);
+              });
+            };
+          })(this));
+        });
+      });
       describe('#find', function() {
         beforeEach(function(done) {
           return this.db.items.insert([

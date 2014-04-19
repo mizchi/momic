@@ -55,6 +55,19 @@ describe 'Momic.Collection', ->
             expect(item.id).eq 'thisisid'
             done()
 
+    describe '#saved', ->
+      beforeEach ->
+        @db.items.autoSave = false
+
+      it 'should return false when items is not saved', ->
+        expect(@db.items.saved()).eq true
+        expect(@db.items.count()).eq 0
+        @db.items.insert().then =>
+          expect(@db.items.saved()).eq false
+          expect(@db.items.count()).eq 1
+          @db.items.save().then =>
+            expect(@db.items.saved()).eq true
+
     describe '#find', ->
       beforeEach (done) ->
         @db.items.insert([
