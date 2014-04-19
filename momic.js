@@ -81,6 +81,7 @@ function clone(obj) {
       this.insert = __bind(this.insert, this);
       this.update = __bind(this.update, this);
       this.save = __bind(this.save, this);
+      this.saved = __bind(this.saved, this);
       this.loadContent = __bind(this.loadContent, this);
       this.updateInstanceIfNeeded = __bind(this.updateInstanceIfNeeded, this);
       this.load = __bind(this.load, this);
@@ -140,6 +141,10 @@ function clone(obj) {
       })(this));
     };
 
+    Collection.prototype.saved = function() {
+      return this._saved;
+    };
+
     Collection.prototype.save = function(content) {
       return defer((function(_this) {
         return function(done) {
@@ -149,8 +154,8 @@ function clone(obj) {
           }
           tosave = content != null ? content : _this._instance;
           return localforage.setItem(_this.key, tosave).then(function() {
-            _this.resolved = true;
             _this.updateInstanceIfNeeded(tosave);
+            _this._saved = true;
             return done();
           });
         };
@@ -177,9 +182,15 @@ function clone(obj) {
                 }
               }
             }
-            return _this.save(content).then(function() {
+            _this.updateInstanceIfNeeded(content);
+            if (_this.autoSave) {
+              return _this.save(content).then(function() {
+                return done();
+              });
+            } else {
+              _this._saved = false;
               return done();
-            });
+            }
           });
         };
       })(this));
@@ -212,7 +223,7 @@ function clone(obj) {
                 return done();
               });
             } else {
-              _this.resolved = false;
+              _this._saved = false;
               if (_this.hasInstance) {
                 _this._instance = content;
               }

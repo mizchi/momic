@@ -61,12 +61,14 @@ class Momic.Collection
     else
       @load().then (content) => done(content)
 
+  saved: => @_saved
+
   save: (content) => defer (done) =>
     throw "`#{@key}` collection doesn't have storage" unless @hasPersistence
     tosave = content ? @_instance
     localforage.setItem(@key, tosave).then =>
-      @resolved = true
       @updateInstanceIfNeeded(tosave)
+      @_saved = true
       done()
 
   update: (obj) => defer (done) =>
@@ -79,8 +81,12 @@ class Momic.Collection
             for key, val of item
               content[n][key] = val
             break
-
-      @save(content).then => done()
+      @updateInstanceIfNeeded(content)
+      if @autoSave
+        @save(content).then => done()
+      else
+        @_saved = false
+        done()
 
   insert: (obj) => defer (done) =>
     array =
@@ -103,7 +109,7 @@ class Momic.Collection
           @_instance = content if @hasInstance
           done()
       else
-        @resolved = false
+        @_saved = false
         @_instance = content if @hasInstance
         done()
 
