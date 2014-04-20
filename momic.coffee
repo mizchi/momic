@@ -42,16 +42,33 @@ applyHooks = (items, hooks) ->
 Momic = {}
 class Momic.Collection
   @dequal = dequal
-  constructor: (@key, {@schema, @hasInstance, @hasPersistence, @endpoint, @autoSave}) ->
+
+  addPlugin: ({initialize, preInsertHook, @preUpdateHook, preSaveHook, postSaveHook}) ->
+    initialize?(@)
+    @preInsertHooks.push preInsertHook if preInsertHook?
+    @preUpdateHooks.push preUpdateHook if preUpdateHook?
+    @preSaveHooks.push preSaveHook if preSaveHook?
+    @postSaveHooks.push postSaveHook if postSaveHook?
+
+  constructor: (@key, {@schema, @hasInstance, @hasPersistence, @endpoint, @autoSave, @plugins}) ->
     @autoSave ?= true
     @hasPersistence ?= true
     @hasInstance ?= true
 
-    idAutoInsertion = (item) -> item.id ?= uuid()
-    @preInsertHooks  = [idAutoInsertion]
-    @preUpdateHooks   = []
-    @preSaveHooks  = []
-    @postSaveHooks = []
+    # idAutoInsertion = (item) -> item.id ?= uuid()
+    @preInsertHooks = []
+    @preUpdateHooks = []
+    @preSaveHooks   = []
+    @postSaveHooks  = []
+
+    IdAutoInsertionPlugin =
+      preInsertHook: (item) -> item.id ?= uuid()
+
+    @addPlugin IdAutoInsertionPlugin
+    # applyPlugins
+    if @plugins?
+      for plugin in @plugins
+        @addPlugin(plugin)
 
     unless @hasInstance or @hasPersistence
       throw new Error('hasInstance or hasPersistence must be true')

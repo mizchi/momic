@@ -88,10 +88,30 @@ function clone(obj) {
   Momic.Collection = (function() {
     Collection.dequal = dequal;
 
+    Collection.prototype.addPlugin = function(_arg) {
+      var initialize, postSaveHook, preInsertHook, preSaveHook;
+      initialize = _arg.initialize, preInsertHook = _arg.preInsertHook, this.preUpdateHook = _arg.preUpdateHook, preSaveHook = _arg.preSaveHook, postSaveHook = _arg.postSaveHook;
+      if (typeof initialize === "function") {
+        initialize(this);
+      }
+      if (preInsertHook != null) {
+        this.preInsertHooks.push(preInsertHook);
+      }
+      if (typeof preUpdateHook !== "undefined" && preUpdateHook !== null) {
+        this.preUpdateHooks.push(preUpdateHook);
+      }
+      if (preSaveHook != null) {
+        this.preSaveHooks.push(preSaveHook);
+      }
+      if (postSaveHook != null) {
+        return this.postSaveHooks.push(postSaveHook);
+      }
+    };
+
     function Collection(key, _arg) {
-      var idAutoInsertion;
+      var IdAutoInsertionPlugin, plugin, _i, _len, _ref;
       this.key = key;
-      this.schema = _arg.schema, this.hasInstance = _arg.hasInstance, this.hasPersistence = _arg.hasPersistence, this.endpoint = _arg.endpoint, this.autoSave = _arg.autoSave;
+      this.schema = _arg.schema, this.hasInstance = _arg.hasInstance, this.hasPersistence = _arg.hasPersistence, this.endpoint = _arg.endpoint, this.autoSave = _arg.autoSave, this.plugins = _arg.plugins;
       this.init = __bind(this.init, this);
       this.remove = __bind(this.remove, this);
       this.find = __bind(this.find, this);
@@ -115,13 +135,23 @@ function clone(obj) {
       if (this.hasInstance == null) {
         this.hasInstance = true;
       }
-      idAutoInsertion = function(item) {
-        return item.id != null ? item.id : item.id = uuid();
-      };
-      this.preInsertHooks = [idAutoInsertion];
+      this.preInsertHooks = [];
       this.preUpdateHooks = [];
       this.preSaveHooks = [];
       this.postSaveHooks = [];
+      IdAutoInsertionPlugin = {
+        preInsertHook: function(item) {
+          return item.id != null ? item.id : item.id = uuid();
+        }
+      };
+      this.addPlugin(IdAutoInsertionPlugin);
+      if (this.plugins != null) {
+        _ref = this.plugins;
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          plugin = _ref[_i];
+          this.addPlugin(plugin);
+        }
+      }
       if (!(this.hasInstance || this.hasPersistence)) {
         throw new Error('hasInstance or hasPersistence must be true');
       }
