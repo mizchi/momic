@@ -99,7 +99,7 @@ Boolean: current state is saved.
 
 ## Plugins
 
-You can create your plugins with hooks
+You can add your plugins with hooks
 
 ```coffee
 MyPlugin = {
@@ -118,7 +118,7 @@ window.db = new Momic.DB
       plugins: [MyPlugin]
 ```
 
-If you want to add valide, write as your plugin.
+If you want to add validation, add preInsertHook.
 
 ## Example
 
