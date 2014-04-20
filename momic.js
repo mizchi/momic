@@ -91,7 +91,7 @@ function clone(obj) {
     Collection.prototype.addPlugin = function(_arg) {
       var initialize, postSaveHook, preInsertHook, preSaveHook;
       initialize = _arg.initialize, preInsertHook = _arg.preInsertHook, this.preUpdateHook = _arg.preUpdateHook, preSaveHook = _arg.preSaveHook, postSaveHook = _arg.postSaveHook;
-      if (typeof initialize === "function") {
+      if (initialize != null) {
         initialize(this);
       }
       if (preInsertHook != null) {

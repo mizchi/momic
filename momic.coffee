@@ -44,7 +44,7 @@ class Momic.Collection
   @dequal = dequal
 
   addPlugin: ({initialize, preInsertHook, @preUpdateHook, preSaveHook, postSaveHook}) ->
-    initialize?(@)
+    initialize(@) if initialize?
     @preInsertHooks.push preInsertHook if preInsertHook?
     @preUpdateHooks.push preUpdateHook if preUpdateHook?
     @preSaveHooks.push preSaveHook if preSaveHook?

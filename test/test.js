@@ -169,7 +169,7 @@
           this.db.items.addPlugin(PostSavePlugin);
           return this.db.items.autoSave = false;
         });
-        it('should call postSaveHook and preSaveHook', function() {
+        xit('should call postSaveHook and preSaveHook', function(done) {
           this.mock.expects('initialize').once();
           this.mock.expects('preSaveHook').once();
           this.mock.expects('postSaveHook').once();
@@ -179,7 +179,7 @@
             };
           })(this));
         });
-        it('should call preInsertHook at insertion', function() {
+        xit('should call preInsertHook at insertion', function(done) {
           this.mock.expects('preSaveHook').twice();
           return this.db.items.insert([
             {
@@ -191,7 +191,7 @@
             return this.mock.verify();
           });
         });
-        return it('should call preUpdateHook at updating', function() {
+        return xit('should call preUpdateHook at updating', function(done) {
           this.mock.expects('postSaveHook').once();
           return this.db.items.insert([
             {
