@@ -33,6 +33,12 @@ dequal = (left, right) ->
         dequal(left[key], right[key])
   (results.filter (item) -> item).length is results.length
 
+
+applyHooks = (items, hooks) ->
+  for i in items
+    for hook in hooks
+      hook(i)
+
 Momic = {}
 class Momic.Collection
   @dequal = dequal
@@ -42,7 +48,12 @@ class Momic.Collection
     @hasInstance ?= true
 
     idAutoInsertion = (item) -> item.id ?= uuid()
-    @preInsertHooks = [idAutoInsertion]
+    @preInsertHooks  = [idAutoInsertion]
+    @postInsertHooks = []
+    @preUpdateHooks   = []
+    @postUpdateHooks  = []
+    @preSaveHooks  = []
+    @postSaveHooks = []
 
     unless @hasInstance or @hasPersistence
       throw new Error('hasInstance or hasPersistence must be true')
@@ -101,9 +112,7 @@ class Momic.Collection
         ret = clone(obj)
         [ret]
 
-    for i in array
-      for hook in @preInsertHooks
-        hook(i)
+    applyHooks(array, @preInsertHooks)
 
     @loadContent().then (content) =>
       # TODO: check shema
