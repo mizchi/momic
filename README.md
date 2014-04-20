@@ -97,6 +97,29 @@ return current colletion's count
 ``collection#resolved``
 Boolean: current state is saved.
 
+## Plugins
+
+You can create your plugins with hooks
+
+```coffee
+MyPlugin = {
+  initialize: (collection) -> # called with collection instance
+  preInsertHook: (item) -> # called by each items to modify
+  preUpdateHook: (item) -> # called by each items to modify
+  preSaveHook: (items) ->  # called once before save
+  postSaveHook: (items) -> # called once after save
+    console.log 'collection saved!'
+}
+
+window.db = new Momic.DB
+  name: 'app'
+  collections:
+    items:
+      plugins: [MyPlugin]
+```
+
+If you want to add valide, write as your plugin.
+
 ## Example
 
 ```coffee
