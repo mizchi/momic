@@ -13,6 +13,53 @@ describe 'Momic.Collection', ->
       expect(Momic.Collection.dequal {a: {b: 1}, c: 2}, {a: {b: 1}, c: 2}).eq true
       expect(Momic.Collection.dequal {a: {b: 1}, c: 3}, {a: {b: 1}, c: 2}).eq false
 
+  describe 'Momic.DB', ->
+    beforeEach (done) ->
+      localforage.setDriver('localStorageWrapper')
+      localforage.clear => done()
+
+    it 'no opts', (done) ->
+      db = new Momic.DB()
+      expect(db.initialized).to.not.be.ok
+      db.init().then =>
+        expect(db).to.be.an.instanceOf Momic.DB
+        expect(db.initialized).to.be.ok
+        done()
+
+    it 'use reserved word as collection name', ->
+      expect( ->
+        db = new Momic.DB(
+          collections:
+            prefix: {}
+        )
+      ).throw Error
+
+    it 'initialize with collections', (done) ->
+      db = new Momic.DB
+        collections:
+          items: {}
+      db.init().then ->
+        expect(db).to.have.property 'items'
+        expect(db.items).to.be.an.instanceOf Momic.Collection
+        done()
+
+    it 'add collection berfore init', (done) ->
+      db = new Momic.DB()
+      db.addCollection('items', {})
+      expect(db.items._instance).to.eql null
+      db.init().then ->
+        expect(db).to.property 'items'
+        expect(db.items).to.be.instanceOf Momic.Collection
+        expect(db.items._instance).to.eql []
+        done()
+
+    it 'add collection after init', (done) ->
+      db = new Momic.DB()
+      db.init().then ->
+        db.addCollection("items", {}).then ->
+          expect(db.items._instance).to.eql []
+          done()
+
   context 'with localStorageWrapper', ->
     beforeEach (done) ->
       @db = null
