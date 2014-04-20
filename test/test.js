@@ -155,6 +155,62 @@
           };
         })(this));
       });
+      describe('#addPlugin', function() {
+        beforeEach(function() {
+          var PostSavePlugin;
+          PostSavePlugin = {
+            initialize: function() {},
+            preSaveHook: function() {},
+            postSaveHook: function() {},
+            preInsertHook: function() {},
+            preUpdateHook: function() {}
+          };
+          this.mock = sinon.mock(PostSavePlugin);
+          this.db.items.addPlugin(PostSavePlugin);
+          return this.db.items.autoSave = false;
+        });
+        it('should call postSaveHook and preSaveHook', function() {
+          this.mock.expects('initialize').once();
+          this.mock.expects('preSaveHook').once();
+          this.mock.expects('postSaveHook').once();
+          return this.db.items.save().then((function(_this) {
+            return function() {
+              return _this.mock.verify();
+            };
+          })(this));
+        });
+        it('should call preInsertHook at insertion', function() {
+          this.mock.expects('preSaveHook').twice();
+          return this.db.items.insert([
+            {
+              n: 1
+            }, {
+              n: 2
+            }
+          ]).then(function() {
+            return this.mock.verify();
+          });
+        });
+        return it('should call preUpdateHook at updating', function() {
+          this.mock.expects('postSaveHook').once();
+          return this.db.items.insert([
+            {
+              id: 1
+            }, {
+              id: 2
+            }
+          ]).then(function() {
+            return this.db.items.insert({
+              id: 1,
+              foo: 'bar'
+            }).then((function(_this) {
+              return function() {
+                return _this.mock.verify();
+              };
+            })(this));
+          });
+        });
+      });
       describe('#insert', function() {
         it('should insert item', function(done) {
           return this.db.items.insert({

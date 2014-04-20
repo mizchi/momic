@@ -71,6 +71,38 @@ describe 'Momic.Collection', ->
             items: {}
         @db.init().then => done()
 
+    describe '#addPlugin', ->
+      beforeEach ->
+        PostSavePlugin =
+          initialize: ->
+          preSaveHook: ->
+          postSaveHook: ->
+          preInsertHook: ->
+          preUpdateHook: ->
+
+        @mock = sinon.mock(PostSavePlugin)
+
+        @db.items.addPlugin PostSavePlugin
+        @db.items.autoSave = false
+
+      it 'should call postSaveHook and preSaveHook', ->
+        @mock.expects('initialize').once()
+        @mock.expects('preSaveHook').once()
+        @mock.expects('postSaveHook').once()
+        @db.items.save().then =>
+          @mock.verify()
+
+      it 'should call preInsertHook at insertion', ->
+        @mock.expects('preSaveHook').twice()
+        @db.items.insert([{n: 1}, {n: 2}]).then ->
+          @mock.verify()
+
+      it 'should call preUpdateHook at updating', ->
+        @mock.expects('postSaveHook').once()
+        @db.items.insert([{id: 1}, {id: 2}]).then ->
+          @db.items.insert({id: 1, foo: 'bar'}).then =>
+            @mock.verify()
+
     describe '#insert', ->
       it 'should insert item', (done) ->
         @db.items.insert({foo: 1, bar: 2, baz: 3}).then =>

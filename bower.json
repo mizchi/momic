@@ -16,5 +16,8 @@
   "dependencies": {
     "localforage": "~0.4.0",
     "es6-promise": "~0.1.1"
+  },
+  "devDependencies": {
+    "sinonjs": "~1.9.1"
   }
 }
