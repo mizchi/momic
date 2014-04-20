@@ -179,13 +179,7 @@ class Momic.Collection
 
   init: => defer (done) =>
     localforage.getItem @key, (content) =>
-      if content?
-        try
-          content = JSON.parse(content)
-        catch e
-          throw "#{@key} is not used as momic repository"
-      else
-        content ?= []
+      content ?= []
       @_instance = content if @hasInstance
 
       if @hasPersistence

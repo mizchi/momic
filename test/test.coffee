@@ -1,3 +1,33 @@
+describe 'Momic.DB', ->
+  beforeEach (done) ->
+    localforage.setDriver('localStorageWrapper')
+    localforage.clear => done()
+
+  describe '#init', ->
+    it 'should init data', (done) ->
+      db = new Momic.DB
+        name: 'app'
+        collections:
+          items: {}
+      db.init().then =>
+        done()
+
+    it 'should init again after initialize', (done) ->
+      db = new Momic.DB
+        name: 'app'
+        collections:
+          items: {}
+      db.init().then =>
+        db.items.insert(foo: 1).then =>
+          db2 = new Momic.DB
+            name: 'app'
+            collections:
+              items: {}
+          db2.init().then =>
+            db2.items.findOne().then (item) =>
+              expect(item.foo).eq 1
+              done()
+
 describe 'Momic.Collection', ->
   describe '.dequal', ->
     it 'should fill left statements', ->

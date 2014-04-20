@@ -376,18 +376,8 @@ function clone(obj) {
       return defer((function(_this) {
         return function(done) {
           return localforage.getItem(_this.key, function(content) {
-            var e;
-            if (content != null) {
-              try {
-                content = JSON.parse(content);
-              } catch (_error) {
-                e = _error;
-                throw "" + _this.key + " is not used as momic repository";
-              }
-            } else {
-              if (content == null) {
-                content = [];
-              }
+            if (content == null) {
+              content = [];
             }
             if (_this.hasInstance) {
               _this._instance = content;
