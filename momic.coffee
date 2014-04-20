@@ -49,9 +49,7 @@ class Momic.Collection
 
     idAutoInsertion = (item) -> item.id ?= uuid()
     @preInsertHooks  = [idAutoInsertion]
-    @postInsertHooks = []
     @preUpdateHooks   = []
-    @postUpdateHooks  = []
     @preSaveHooks  = []
     @postSaveHooks = []
 
@@ -80,9 +78,11 @@ class Momic.Collection
   save: (content) => defer (done) =>
     throw "`#{@key}` collection doesn't have storage" unless @hasPersistence
     tosave = content ? @_instance
+    hook(tosave) for hook in @preSaveHooks
     localforage.setItem(@key, tosave).then =>
       @updateInstanceIfNeeded(tosave)
       @_saved = true
+      hook(tosave) for hook in @postSaveHooks
       done()
 
   update: (obj) => defer (done) =>
@@ -95,6 +95,7 @@ class Momic.Collection
             for key, val of item
               content[n][key] = val
             break
+      applyHooks content, @preUpdateHooks
       @updateInstanceIfNeeded(content)
       if @autoSave
         @save(content).then => done()
@@ -120,7 +121,8 @@ class Momic.Collection
       @_updateCount(content.length)
       if @autoSave
         @save().then =>
-          @_instance = content if @hasInstance
+          if @hasInstance
+            @_instance = content
           done()
       else
         @_saved = false

@@ -119,9 +119,7 @@ function clone(obj) {
         return item.id != null ? item.id : item.id = uuid();
       };
       this.preInsertHooks = [idAutoInsertion];
-      this.postInsertHooks = [];
       this.preUpdateHooks = [];
-      this.postUpdateHooks = [];
       this.preSaveHooks = [];
       this.postSaveHooks = [];
       if (!(this.hasInstance || this.hasPersistence)) {
@@ -176,14 +174,25 @@ function clone(obj) {
     Collection.prototype.save = function(content) {
       return defer((function(_this) {
         return function(done) {
-          var tosave;
+          var hook, tosave, _i, _len, _ref;
           if (!_this.hasPersistence) {
             throw "`" + _this.key + "` collection doesn't have storage";
           }
           tosave = content != null ? content : _this._instance;
+          _ref = _this.preSaveHooks;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            hook = _ref[_i];
+            hook(tosave);
+          }
           return localforage.setItem(_this.key, tosave).then(function() {
+            var _j, _len1, _ref1;
             _this.updateInstanceIfNeeded(tosave);
             _this._saved = true;
+            _ref1 = _this.postSaveHooks;
+            for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+              hook = _ref1[_j];
+              hook(tosave);
+            }
             return done();
           });
         };
@@ -210,6 +219,7 @@ function clone(obj) {
                 }
               }
             }
+            applyHooks(content, _this.preUpdateHooks);
             _this.updateInstanceIfNeeded(content);
             if (_this.autoSave) {
               return _this.save(content).then(function() {
