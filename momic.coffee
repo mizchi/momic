@@ -41,6 +41,9 @@ class Momic.Collection
     @hasPersistence ?= true
     @hasInstance ?= true
 
+    idAutoInsertion = (item) -> item.id ?= uuid()
+    @preInsertHooks = [idAutoInsertion]
+
     unless @hasInstance or @hasPersistence
       throw new Error('hasInstance or hasPersistence must be true')
     @_count = 0
@@ -93,12 +96,14 @@ class Momic.Collection
       if obj.length
         obj.map (i) ->
           ret = clone(i)
-          ret.id ?= uuid()
           ret
       else
         ret = clone(obj)
-        ret.id ?= uuid()
         [ret]
+
+    for i in array
+      for hook in @preInsertHooks
+        hook(i)
 
     @loadContent().then (content) =>
       # TODO: check shema

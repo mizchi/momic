@@ -71,6 +71,7 @@ function clone(obj) {
     Collection.dequal = dequal;
 
     function Collection(key, _arg) {
+      var idAutoInsertion;
       this.key = key;
       this.schema = _arg.schema, this.hasInstance = _arg.hasInstance, this.hasPersistence = _arg.hasPersistence, this.endpoint = _arg.endpoint, this.autoSave = _arg.autoSave;
       this.init = __bind(this.init, this);
@@ -96,7 +97,11 @@ function clone(obj) {
       if (this.hasInstance == null) {
         this.hasInstance = true;
       }
-      if (!(this.hasPersistence || this.hasPersistence)) {
+      idAutoInsertion = function(item) {
+        return item.id != null ? item.id : item.id = uuid();
+      };
+      this.preInsertHooks = [idAutoInsertion];
+      if (!(this.hasInstance || this.hasPersistence)) {
         throw new Error('hasInstance or hasPersistence must be true');
       }
       this._count = 0;
@@ -199,19 +204,24 @@ function clone(obj) {
     Collection.prototype.insert = function(obj) {
       return defer((function(_this) {
         return function(done) {
-          var array, ret;
+          var array, hook, i, ret, _i, _j, _len, _len1, _ref;
           array = obj.length ? obj.map(function(i) {
             var ret;
             ret = clone(i);
-            if (ret.id == null) {
-              ret.id = uuid();
-            }
             return ret;
-          }) : (ret = clone(obj), ret.id != null ? ret.id : ret.id = uuid(), [ret]);
+          }) : (ret = clone(obj), [ret]);
+          for (_i = 0, _len = array.length; _i < _len; _i++) {
+            i = array[_i];
+            _ref = _this.preInsertHooks;
+            for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+              hook = _ref[_j];
+              hook(i);
+            }
+          }
           return _this.loadContent().then(function(content) {
-            var i, _i, _len;
-            for (_i = 0, _len = array.length; _i < _len; _i++) {
-              i = array[_i];
+            var _k, _len2;
+            for (_k = 0, _len2 = array.length; _k < _len2; _k++) {
+              i = array[_k];
               content.push(i);
             }
             _this._updateCount(content.length);
@@ -310,10 +320,10 @@ function clone(obj) {
       return defer((function(_this) {
         return function(done) {
           return localforage.getItem(_this.key, function(content) {
-            var cottent, e;
+            var e;
             if (content != null) {
               try {
-                cottent = JSON.parse(content);
+                content = JSON.parse(content);
               } catch (_error) {
                 e = _error;
                 throw "" + _this.key + " is not used as momic repository";
@@ -351,23 +361,16 @@ function clone(obj) {
     function DB(opts) {
       this.init = __bind(this.init, this);
       this.collectionKey = __bind(this.collectionKey, this);
-      var colOpts, key;
+      var colOpts, key, _ref;
       this.initialized = false;
-      this.prefix = opts.name;
+      this.prefix = (opts != null ? opts.name : void 0) || '';
       this.storage = (opts != null ? opts.storage : void 0) || 'localforage';
-      this.collections = (function() {
-        var _ref, _results;
-        _ref = opts.collections;
-        _results = [];
-        for (key in _ref) {
-          colOpts = _ref[key];
-          if (colOpts.storage == null) {
-            colOpts.storage = this.storage;
-          }
-          _results.push(this[key] = new Momic.Collection(this.collectionKey(key), colOpts));
-        }
-        return _results;
-      }).call(this);
+      this.collections = [];
+      _ref = opts != null ? opts.collections : void 0;
+      for (key in _ref) {
+        colOpts = _ref[key];
+        this.addCollection(key, colOpts);
+      }
     }
 
     DB.prototype.init = function() {
@@ -383,6 +386,28 @@ function clone(obj) {
           });
         };
       })(this));
+    };
+
+    DB.prototype.addCollection = function(key, colOpts) {
+      if (key === 'initialized' || key === 'prefix' || key === 'storage' || key === 'init' || key === 'collectionKey' || key === 'addCollection') {
+        throw new Error("'" + key + "' is reserved word");
+      }
+      if (colOpts.storage == null) {
+        colOpts.storage = this.storage;
+      }
+      this[key] = new Momic.Collection(this.collectionKey(key), colOpts);
+      this.collections.push(this[key]);
+      if (this.initialized) {
+        return defer((function(_this) {
+          return function(done) {
+            return _this[key].init().then(function() {
+              return done();
+            });
+          };
+        })(this));
+      } else {
+        return this[key];
+      }
     };
 
     return DB;

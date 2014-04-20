@@ -70,6 +70,73 @@
         })).eq(false);
       });
     });
+    describe('Momic.DB', function() {
+      beforeEach(function(done) {
+        localforage.setDriver('localStorageWrapper');
+        return localforage.clear((function(_this) {
+          return function() {
+            return done();
+          };
+        })(this));
+      });
+      it('no opts', function(done) {
+        var db;
+        db = new Momic.DB();
+        expect(db.initialized).to.not.be.ok;
+        return db.init().then((function(_this) {
+          return function() {
+            expect(db).to.be.an.instanceOf(Momic.DB);
+            expect(db.initialized).to.be.ok;
+            return done();
+          };
+        })(this));
+      });
+      it('use reserved word as collection name', function() {
+        return expect(function() {
+          var db;
+          return db = new Momic.DB({
+            collections: {
+              prefix: {}
+            }
+          });
+        })["throw"](Error);
+      });
+      it('initialize with collections', function(done) {
+        var db;
+        db = new Momic.DB({
+          collections: {
+            items: {}
+          }
+        });
+        return db.init().then(function() {
+          expect(db).to.have.property('items');
+          expect(db.items).to.be.an.instanceOf(Momic.Collection);
+          return done();
+        });
+      });
+      it('add collection berfore init', function(done) {
+        var db;
+        db = new Momic.DB();
+        db.addCollection('items', {});
+        expect(db.items._instance).to.eql(null);
+        return db.init().then(function() {
+          expect(db).to.property('items');
+          expect(db.items).to.be.instanceOf(Momic.Collection);
+          expect(db.items._instance).to.eql([]);
+          return done();
+        });
+      });
+      return it('add collection after init', function(done) {
+        var db;
+        db = new Momic.DB();
+        return db.init().then(function() {
+          return db.addCollection("items", {}).then(function() {
+            expect(db.items._instance).to.eql([]);
+            return done();
+          });
+        });
+      });
+    });
     return context('with localStorageWrapper', function() {
       beforeEach(function(done) {
         this.db = null;
