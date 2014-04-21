@@ -115,6 +115,7 @@ function clone(obj) {
       this.init = __bind(this.init, this);
       this.remove = __bind(this.remove, this);
       this.find = __bind(this.find, this);
+      this.getById = __bind(this.getById, this);
       this.findById = __bind(this.findById, this);
       this.findOne = __bind(this.findOne, this);
       this.drop = __bind(this.drop, this);
@@ -378,6 +379,15 @@ function clone(obj) {
           return done(_this._instance[index]);
         };
       })(this));
+    };
+
+    Collection.prototype.getById = function(id) {
+      var index;
+      if (!this.hasInstance) {
+        throw 'need hasInstance';
+      }
+      index = this._indexesData['id'][id][0];
+      return this._instance[index];
     };
 
     Collection.prototype.find = function(func_or_obj) {

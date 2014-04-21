@@ -176,6 +176,11 @@ class Momic.Collection
     [index] = @_indexesData['id'][id]
     done @_instance[index]
 
+  getById: (id) =>
+    throw 'need hasInstance' if not @hasInstance
+    [index] = @_indexesData['id'][id]
+    return @_instance[index]
+
   find: (func_or_obj = null) => defer (done) =>
     @loadContent().then (content) =>
       results =

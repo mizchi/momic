@@ -216,6 +216,18 @@ describe 'Momic.Collection', ->
           done()
         , -> done('failed!')
 
+    describe '#getById', ->
+      beforeEach (done) ->
+        @db.items.insert([
+          {id: 1, content: 'a'}
+          {id: 2, content: 'b'}
+          {id: 3, content: 'c'}
+        ]).then => done()
+
+      it 'should one item by using index', ->
+        item = @db.items.getById(2)
+        expect(item.content).eq 'b'
+
     describe '#findOne', ->
       beforeEach (done) ->
         @db.items.insert([

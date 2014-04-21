@@ -436,6 +436,31 @@
           });
         });
       });
+      describe('#getById', function() {
+        beforeEach(function(done) {
+          return this.db.items.insert([
+            {
+              id: 1,
+              content: 'a'
+            }, {
+              id: 2,
+              content: 'b'
+            }, {
+              id: 3,
+              content: 'c'
+            }
+          ]).then((function(_this) {
+            return function() {
+              return done();
+            };
+          })(this));
+        });
+        return it('should one item by using index', function() {
+          var item;
+          item = this.db.items.getById(2);
+          return expect(item.content).eq('b');
+        });
+      });
       describe('#findOne', function() {
         beforeEach(function(done) {
           return this.db.items.insert([
