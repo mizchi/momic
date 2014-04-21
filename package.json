@@ -1,6 +1,6 @@
 {
   "name": "momic",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "`momic.js` is mongo shell like storage API based on localforage.",
   "main": "momic.js",
   "dependencies": {
