@@ -406,6 +406,36 @@
           })(this));
         });
       });
+      describe('#findById', function() {
+        beforeEach(function(done) {
+          return this.db.items.insert([
+            {
+              id: 1,
+              content: 'a'
+            }, {
+              id: 2,
+              content: 'b'
+            }, {
+              id: 3,
+              content: 'c'
+            }
+          ]).then((function(_this) {
+            return function() {
+              return done();
+            };
+          })(this));
+        });
+        return it('should one item by using index', function(done) {
+          return this.db.items.findById(2).then((function(_this) {
+            return function(item) {
+              expect(item.content).eq('b');
+              return done();
+            };
+          })(this), function() {
+            return done('failed!');
+          });
+        });
+      });
       describe('#findOne', function() {
         beforeEach(function(done) {
           return this.db.items.insert([

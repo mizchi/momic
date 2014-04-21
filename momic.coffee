@@ -50,7 +50,7 @@ class Momic.Collection
     @preSaveHooks.push preSaveHook if preSaveHook?
     @postSaveHooks.push postSaveHook if postSaveHook?
 
-  constructor: (@key, {@schema, @hasInstance, @hasPersistence, @endpoint, @autoSave, @plugins}) ->
+  constructor: (@key, {@schema, @hasInstance, @hasPersistence, @endpoint, @autoSave, @plugins, @indexes}) ->
     @autoSave ?= true
     @hasPersistence ?= true
     @hasInstance ?= true
@@ -74,6 +74,23 @@ class Momic.Collection
       throw new Error('hasInstance or hasPersistence must be true')
     @_count = 0
     @_instance = null
+
+    @indexes ?= ['id']
+    @_indexesData = {}
+
+  initIndexes: ->
+    for indexName in @indexes
+      @resetItemsIndex(indexName)
+
+  resetItemsIndex: (indexName) =>
+    @_indexesData[indexName] = {}
+    for item in @_instance
+      @updateIndex indexName, item[indexName]
+
+  updateIndex: (indexName, val, index) =>
+    indexes = @_indexesData[indexName]
+    if (indexes[val])? then indexes[val].push index
+    else @_indexesData[indexName][val] = [index]
 
   _updateCount: (@_count) =>
   count: => @_count
@@ -134,7 +151,9 @@ class Momic.Collection
 
     @loadContent().then (content) =>
       # TODO: check shema
+      beforeIndexLength = content.length
       (content.push i) for i in array
+      @updateIndex('id', i.id, beforeIndexLength+n) for i, n in array
       @_updateCount(content.length)
       if @autoSave
         @save().then =>
@@ -151,6 +170,11 @@ class Momic.Collection
 
   findOne: (func_or_obj) => defer (done) =>
     @find(func_or_obj).then ([first]) => done(first)
+
+  findById: (id) => defer (done) =>
+    throw 'need hasInstance' if not @hasInstance
+    [index] = @_indexesData['id'][id]
+    done @_instance[index]
 
   find: (func_or_obj = null) => defer (done) =>
     @loadContent().then (content) =>
@@ -180,7 +204,9 @@ class Momic.Collection
   init: => defer (done) =>
     localforage.getItem @key, (content) =>
       content ?= []
-      @_instance = content if @hasInstance
+      if @hasInstance
+        @_instance = content
+        @initIndexes()
 
       if @hasPersistence
         @save(content).then => done()

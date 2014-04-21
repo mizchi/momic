@@ -111,10 +111,11 @@ function clone(obj) {
     function Collection(key, _arg) {
       var IdAutoInsertionPlugin, plugin, _i, _len, _ref;
       this.key = key;
-      this.schema = _arg.schema, this.hasInstance = _arg.hasInstance, this.hasPersistence = _arg.hasPersistence, this.endpoint = _arg.endpoint, this.autoSave = _arg.autoSave, this.plugins = _arg.plugins;
+      this.schema = _arg.schema, this.hasInstance = _arg.hasInstance, this.hasPersistence = _arg.hasPersistence, this.endpoint = _arg.endpoint, this.autoSave = _arg.autoSave, this.plugins = _arg.plugins, this.indexes = _arg.indexes;
       this.init = __bind(this.init, this);
       this.remove = __bind(this.remove, this);
       this.find = __bind(this.find, this);
+      this.findById = __bind(this.findById, this);
       this.findOne = __bind(this.findOne, this);
       this.drop = __bind(this.drop, this);
       this.insert = __bind(this.insert, this);
@@ -126,6 +127,8 @@ function clone(obj) {
       this.load = __bind(this.load, this);
       this.count = __bind(this.count, this);
       this._updateCount = __bind(this._updateCount, this);
+      this.updateIndex = __bind(this.updateIndex, this);
+      this.resetItemsIndex = __bind(this.resetItemsIndex, this);
       if (this.autoSave == null) {
         this.autoSave = true;
       }
@@ -157,7 +160,44 @@ function clone(obj) {
       }
       this._count = 0;
       this._instance = null;
+      if (this.indexes == null) {
+        this.indexes = ['id'];
+      }
+      this._indexesData = {};
     }
+
+    Collection.prototype.initIndexes = function() {
+      var indexName, _i, _len, _ref, _results;
+      _ref = this.indexes;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        indexName = _ref[_i];
+        _results.push(this.resetItemsIndex(indexName));
+      }
+      return _results;
+    };
+
+    Collection.prototype.resetItemsIndex = function(indexName) {
+      var item, _i, _len, _ref, _results;
+      this._indexesData[indexName] = {};
+      _ref = this._instance;
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        _results.push(this.updateIndex(indexName, item[indexName]));
+      }
+      return _results;
+    };
+
+    Collection.prototype.updateIndex = function(indexName, val, index) {
+      var indexes;
+      indexes = this._indexesData[indexName];
+      if (indexes[val] != null) {
+        return indexes[val].push(index);
+      } else {
+        return this._indexesData[indexName][val] = [index];
+      }
+    };
 
     Collection.prototype._updateCount = function(_count) {
       this._count = _count;
@@ -275,10 +315,15 @@ function clone(obj) {
           }) : (ret = clone(obj), [ret]);
           applyHooks(array, _this.preInsertHooks);
           return _this.loadContent().then(function(content) {
-            var i, _i, _len;
+            var beforeIndexLength, i, n, _i, _j, _len, _len1;
+            beforeIndexLength = content.length;
             for (_i = 0, _len = array.length; _i < _len; _i++) {
               i = array[_i];
               content.push(i);
+            }
+            for (n = _j = 0, _len1 = array.length; _j < _len1; n = ++_j) {
+              i = array[n];
+              _this.updateIndex('id', i.id, beforeIndexLength + n);
             }
             _this._updateCount(content.length);
             if (_this.autoSave) {
@@ -318,6 +363,19 @@ function clone(obj) {
             first = _arg[0];
             return done(first);
           });
+        };
+      })(this));
+    };
+
+    Collection.prototype.findById = function(id) {
+      return defer((function(_this) {
+        return function(done) {
+          var index;
+          if (!_this.hasInstance) {
+            throw 'need hasInstance';
+          }
+          index = _this._indexesData['id'][id][0];
+          return done(_this._instance[index]);
         };
       })(this));
     };
@@ -381,6 +439,7 @@ function clone(obj) {
             }
             if (_this.hasInstance) {
               _this._instance = content;
+              _this.initIndexes();
             }
             if (_this.hasPersistence) {
               return _this.save(content).then(function() {
