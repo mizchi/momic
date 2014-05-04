@@ -85,6 +85,8 @@ function clone(obj) {
 
   Momic = {};
 
+  Momic.deepClone = clone;
+
   Momic.Collection = (function() {
     Collection.dequal = dequal;
 
@@ -294,11 +296,11 @@ function clone(obj) {
             _this.updateInstanceIfNeeded(content);
             if (_this.autoSave) {
               return _this.save(content).then(function() {
-                return done();
+                return done(clone(array));
               });
             } else {
               _this._saved = false;
-              return done();
+              return done(clone(array));
             }
           });
         };
@@ -332,14 +334,14 @@ function clone(obj) {
                 if (_this.hasInstance) {
                   _this._instance = content;
                 }
-                return done();
+                return done(clone(array));
               });
             } else {
               _this._saved = false;
               if (_this.hasInstance) {
                 _this._instance = content;
               }
-              return done();
+              return done(clone(array));
             }
           });
         };
@@ -349,7 +351,7 @@ function clone(obj) {
     Collection.prototype.drop = function() {
       return defer((function(_this) {
         return function(done) {
-          return localforage.setItem(_this.key, '[]').then(function() {
+          return localforage.setItem(_this.key, []).then(function() {
             return done();
           });
         };

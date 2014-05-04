@@ -40,6 +40,7 @@ applyHooks = (items, hooks) ->
       hook(i)
 
 Momic = {}
+Momic.deepClone = clone
 class Momic.Collection
   @dequal = dequal
 
@@ -132,10 +133,10 @@ class Momic.Collection
       applyHooks content, @preUpdateHooks
       @updateInstanceIfNeeded(content)
       if @autoSave
-        @save(content).then => done()
+        @save(content).then => done(clone array)
       else
         @_saved = false
-        done()
+        done(clone array)
 
   insert: (obj) => defer (done) =>
     array =
@@ -159,14 +160,14 @@ class Momic.Collection
         @save().then =>
           if @hasInstance
             @_instance = content
-          done()
+          done(clone array)
       else
         @_saved = false
         @_instance = content if @hasInstance
-        done()
+        done(clone array)
 
   drop: => defer (done) =>
-    localforage.setItem(@key, '[]').then => done()
+    localforage.setItem(@key, []).then => done()
 
   findOne: (func_or_obj) => defer (done) =>
     @find(func_or_obj).then ([first]) => done(clone first)
