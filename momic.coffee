@@ -169,17 +169,17 @@ class Momic.Collection
     localforage.setItem(@key, '[]').then => done()
 
   findOne: (func_or_obj) => defer (done) =>
-    @find(func_or_obj).then ([first]) => done(first)
+    @find(func_or_obj).then ([first]) => done(clone first)
 
   findById: (id) => defer (done) =>
     throw 'need hasInstance' if not @hasInstance
     [index] = @_indexesData['id'][id]
-    done @_instance[index]
+    done clone @_instance[index]
 
   getById: (id) =>
     throw 'need hasInstance' if not @hasInstance
     [index] = @_indexesData['id'][id]
-    return @_instance[index]
+    return clone @_instance[index]
 
   find: (func_or_obj = null) => defer (done) =>
     @loadContent().then (content) =>
@@ -190,7 +190,7 @@ class Momic.Collection
           content.filter (item) => func(item)
         else if (queryObj = func_or_obj) instanceof Object
           content.filter (item) => dequal(queryObj, item)
-      done(results)
+      done(clone results)
 
   remove: (func_or_obj) =>
     d = defer (done) =>

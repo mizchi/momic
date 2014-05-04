@@ -362,7 +362,7 @@ function clone(obj) {
           return _this.find(func_or_obj).then(function(_arg) {
             var first;
             first = _arg[0];
-            return done(first);
+            return done(clone(first));
           });
         };
       })(this));
@@ -376,7 +376,7 @@ function clone(obj) {
             throw 'need hasInstance';
           }
           index = _this._indexesData['id'][id][0];
-          return done(_this._instance[index]);
+          return done(clone(_this._instance[index]));
         };
       })(this));
     };
@@ -387,7 +387,7 @@ function clone(obj) {
         throw 'need hasInstance';
       }
       index = this._indexesData['id'][id][0];
-      return this._instance[index];
+      return clone(this._instance[index]);
     };
 
     Collection.prototype.find = function(func_or_obj) {
@@ -403,7 +403,7 @@ function clone(obj) {
             }) : (queryObj = func_or_obj) instanceof Object ? content.filter(function(item) {
               return dequal(queryObj, item);
             }) : void 0;
-            return done(results);
+            return done(clone(results));
           });
         };
       })(this));
