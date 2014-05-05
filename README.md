@@ -12,6 +12,48 @@ This project goal is providing useful API for storages for mongodb users.
 - es6-promises
 - localforage
 
+## Examples
+
+```coffee
+localforage.setDriver('localStorageWrapper')
+window.db = new Momic.DB
+  name: 'app'
+  collections:
+    items:
+      hasInstance: true
+      hasPersistence: true
+      autoSave: true
+
+localforage.clear =>
+  db.init().then =>
+    a = db.items.insert({itemType: 'weapon', name: 'Bat', value: 10})
+    b = db.items.insert([
+      { itemType: 'weapon', name: 'Iron Sword', value: 50}
+      { itemType: 'weapon', name: 'Steel Sword', value: 120}
+    ])
+    Promise.all([a,b]).then =>
+      db.items.find().then (content) =>
+        console.log '`content` is all items', content
+        db.items.remove((item) -> item.value > 30).then =>
+          console.log 'Some items are removed'
+```
+
+ActiveRecord like API
+
+```coffee
+Momic.Model.setDB db
+
+class User extends Momic.Model
+  key: 'users'
+
+user = new User
+user.name = 'mizchi'
+user.age = 26
+user.save().then => console.log 'save done!'
+```
+
+See `test/test.coffee` detail.
+
 ## API
 
 All function returns promise object.
@@ -97,6 +139,20 @@ return current colletion's count
 ``collection#resolved``
 Boolean: current state is saved.
 
+### Momic.Model
+
+``Model.setDB(db)``
+``Model.count() => Number``
+``Model.find(query) => Promise(Model[])``
+``Model.update(documents) => Promise(Model[])``
+``Model.insert(documents) => Promise(Model[])``
+``Model.remove(query) => Promise()``
+``model#fetch(id)``
+``model#save()``
+``model#remove()``
+``model#dispose()``
+``model#toJSON()``
+
 ## Plugins
 
 You can add your plugins with hooks
@@ -119,35 +175,6 @@ window.db = new Momic.DB
 ```
 
 If you want to add validation, add preInsertHook.
-
-## Example
-
-```coffee
-localforage.setDriver('localStorageWrapper')
-window.db = new Momic.DB
-  name: 'app'
-  collections:
-    items:
-      hasInstance: true
-      hasPersistence: true
-      autoSave: true
-
-localforage.clear =>
-  db.init().then =>
-    a = db.items.insert({itemType: 'weapon', name: 'Bat', value: 10})
-    b = db.items.insert([
-      { itemType: 'weapon', name: 'Iron Sword', value: 50}
-      { itemType: 'weapon', name: 'Steel Sword', value: 120}
-    ])
-    Promise.all([a,b]).then =>
-      db.items.find().then (content) =>
-        console.log '`content` is all items', content
-        db.items.remove((item) -> item.value > 30).then =>
-          console.log 'Some items are removed'
-
-```
-
-See `test/test.coffee` detail.
 
 ## Run tests
 
