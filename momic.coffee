@@ -250,6 +250,87 @@ class Momic.DB
     else
       return @[key]
 
+class Momic.Model
+  @setDB: (db) => Model._db = db
+  
+  @getDB: => Model._db
+
+  @getCollection: (collectionName) ->
+    db = @getDB()
+    db[@::key]
+
+  @find: (query) -> new Promise (done) =>
+    col = @getCollection()
+    col.find(query).then (items) =>
+      done items.map (item) => new @ item
+
+  @remove: (query) -> new Promise (done) =>
+    col = @getCollection()
+    col.remove(query).then => done()
+
+  @update: (obj) -> new Promise (done) =>
+    col = @getCollection()
+    col.update(obj).then (updatedItems) =>
+      done (updatedItems.map (item) => new @ item)
+
+  @insert: (obj) -> new Promise (done) =>
+    col = @getCollection()
+    col.insert(obj).then (insertedItems) =>
+      done (insertedItems.map (item) => new @ item)
+
+  @findOne: (query) -> new Promise (done) =>
+    col = @getCollection()
+    col.findOne(query).then (item) =>
+      done (new @ item)
+
+  constructor: (params = {}) ->
+    @updateParams(params)
+
+  updateParams: (obj) ->
+    for key, val of obj
+      @[key] = val
+
+  # update: ->
+  save: (obj = null) ->
+    throw 'Already disposed' if @disposed
+    new Promise (done) =>
+      if obj? then @updateParams(obj)
+      if @id?
+        @constructor.update(@toJSON()).then ([item]) =>
+          @updateParams(item)
+          done()
+      else
+        @constructor.insert(@toJSON()).then ([item]) =>
+          @updateParams(item) # set id
+          done()
+
+  fetch: (id) -> new Promise (done) =>
+    @constructor.findOne({id}).then (item) =>
+      @updateParams(item)
+      done()
+
+  remove: ->
+    throw 'Not saved' unless @id
+    throw 'Already disposed' if @disposed
+    new Promise (done) =>
+      @constructor.remove({@id}).then () =>
+        @dispose()
+        done()
+
+  toJSON: ->
+    throw 'Already disposed' if @disposed
+    obj = {}
+    for key, val of @ when not(val instanceof Function) and @hasOwnProperty(key)
+      obj[key] = val
+    clone obj
+
+  dispose: ->
+    throw 'Already disposed' if @disposed
+    for key of @ when @hasOwnProperty(key)
+      delete obj[key]
+    @disposed = true
+    Object.freeze(@)
+
 if (typeof define) is 'function' and (typeof define.amd) is 'object' and define.amd
   define(Momic)
 else

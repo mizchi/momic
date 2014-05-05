@@ -531,6 +531,200 @@ function clone(obj) {
 
   })();
 
+  Momic.Model = (function() {
+    Model.setDB = function(db) {
+      return Model._db = db;
+    };
+
+    Model.getDB = function() {
+      return Model._db;
+    };
+
+    Model.getCollection = function(collectionName) {
+      var db;
+      db = this.getDB();
+      return db[this.prototype.key];
+    };
+
+    Model.find = function(query) {
+      return new Promise((function(_this) {
+        return function(done) {
+          var col;
+          col = _this.getCollection();
+          return col.find(query).then(function(items) {
+            return done(items.map(function(item) {
+              return new _this(item);
+            }));
+          });
+        };
+      })(this));
+    };
+
+    Model.remove = function(query) {
+      return new Promise((function(_this) {
+        return function(done) {
+          var col;
+          col = _this.getCollection();
+          return col.remove(query).then(function() {
+            return done();
+          });
+        };
+      })(this));
+    };
+
+    Model.update = function(obj) {
+      return new Promise((function(_this) {
+        return function(done) {
+          var col;
+          col = _this.getCollection();
+          return col.update(obj).then(function(updatedItems) {
+            return done(updatedItems.map(function(item) {
+              return new _this(item);
+            }));
+          });
+        };
+      })(this));
+    };
+
+    Model.insert = function(obj) {
+      return new Promise((function(_this) {
+        return function(done) {
+          var col;
+          col = _this.getCollection();
+          return col.insert(obj).then(function(insertedItems) {
+            return done(insertedItems.map(function(item) {
+              return new _this(item);
+            }));
+          });
+        };
+      })(this));
+    };
+
+    Model.findOne = function(query) {
+      return new Promise((function(_this) {
+        return function(done) {
+          var col;
+          col = _this.getCollection();
+          return col.findOne(query).then(function(item) {
+            return done(new _this(item));
+          });
+        };
+      })(this));
+    };
+
+    function Model(params) {
+      if (params == null) {
+        params = {};
+      }
+      this.updateParams(params);
+    }
+
+    Model.prototype.updateParams = function(obj) {
+      var key, val, _results;
+      _results = [];
+      for (key in obj) {
+        val = obj[key];
+        _results.push(this[key] = val);
+      }
+      return _results;
+    };
+
+    Model.prototype.save = function(obj) {
+      if (obj == null) {
+        obj = null;
+      }
+      if (this.disposed) {
+        throw 'Already disposed';
+      }
+      return new Promise((function(_this) {
+        return function(done) {
+          if (obj != null) {
+            _this.updateParams(obj);
+          }
+          if (_this.id != null) {
+            return _this.constructor.update(_this.toJSON()).then(function(_arg) {
+              var item;
+              item = _arg[0];
+              _this.updateParams(item);
+              return done();
+            });
+          } else {
+            return _this.constructor.insert(_this.toJSON()).then(function(_arg) {
+              var item;
+              item = _arg[0];
+              _this.updateParams(item);
+              return done();
+            });
+          }
+        };
+      })(this));
+    };
+
+    Model.prototype.fetch = function(id) {
+      return new Promise((function(_this) {
+        return function(done) {
+          return _this.constructor.findOne({
+            id: id
+          }).then(function(item) {
+            _this.updateParams(item);
+            return done();
+          });
+        };
+      })(this));
+    };
+
+    Model.prototype.remove = function() {
+      if (!this.id) {
+        throw 'Not saved';
+      }
+      if (this.disposed) {
+        throw 'Already disposed';
+      }
+      return new Promise((function(_this) {
+        return function(done) {
+          return _this.constructor.remove({
+            id: _this.id
+          }).then(function() {
+            _this.dispose();
+            return done();
+          });
+        };
+      })(this));
+    };
+
+    Model.prototype.toJSON = function() {
+      var key, obj, val;
+      if (this.disposed) {
+        throw 'Already disposed';
+      }
+      obj = {};
+      for (key in this) {
+        val = this[key];
+        if (!(val instanceof Function) && this.hasOwnProperty(key)) {
+          obj[key] = val;
+        }
+      }
+      return clone(obj);
+    };
+
+    Model.prototype.dispose = function() {
+      var key;
+      if (this.disposed) {
+        throw 'Already disposed';
+      }
+      for (key in this) {
+        if (this.hasOwnProperty(key)) {
+          delete obj[key];
+        }
+      }
+      this.disposed = true;
+      return Object.freeze(this);
+    };
+
+    return Model;
+
+  })();
+
   if ((typeof define) === 'function' && (typeof define.amd) === 'object' && define.amd) {
     define(Momic);
   } else {
