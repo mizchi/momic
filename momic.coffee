@@ -253,38 +253,48 @@ class Momic.DB
       return @[key]
 
 class Momic.Model
+  @setup: (opts) => defer (done) =>
+    db = new Momic.DB opts
+    db.init().then => done()
+
   @setDB: (db) => Model._db = db
   
   @getDB: => Model._db
 
   @count: -> @getCollection().count()
 
+  @extend: (obj) ->
+    cls = class extends @
+    for key, val of obj
+      cls::[key] = val
+    cls
+
   @getCollection: ->
     throw 'Need key' unless @::key
     db = @getDB()
     db[@::key]
 
-  @find: (query) -> new Promise (done) =>
+  @find: (query) -> defer (done) =>
     col = @getCollection()
     col.find(query).then (items) =>
       done items.map (item) => new @ item
 
-  @remove: (query) -> new Promise (done) =>
+  @remove: (query) -> defer (done) =>
     col = @getCollection()
     col.remove(query).then =>
       done()
 
-  @update: (obj) -> new Promise (done) =>
+  @update: (obj) -> defer (done) =>
     col = @getCollection()
     col.update(obj).then (updatedItems) =>
       done (updatedItems.map (item) => new @ item)
 
-  @insert: (obj) -> new Promise (done) =>
+  @insert: (obj) -> defer (done) =>
     col = @getCollection()
     col.insert(obj).then (insertedItems) =>
       done (insertedItems.map (item) => new @ item)
 
-  @findOne: (query) -> new Promise (done) =>
+  @findOne: (query) -> defer (done) =>
     col = @getCollection()
     col.findOne(query).then (item) =>
       done (new @ item)
@@ -299,7 +309,7 @@ class Momic.Model
   # update: ->
   save: (obj = null) ->
     throw 'Already disposed' if @disposed
-    new Promise (done) =>
+    defer (done) =>
       if obj? then @updateParams(obj)
       if @id?
         @constructor.update(@toJSON()).then ([item]) =>
@@ -310,7 +320,7 @@ class Momic.Model
           @updateParams(item) # set id
           done()
 
-  fetch: (id) -> new Promise (done) =>
+  fetch: (id) -> defer (done) =>
     @constructor.findOne({id}).then (item) =>
       @updateParams(item)
       done()
@@ -318,7 +328,7 @@ class Momic.Model
   remove: ->
     throw 'Not saved' unless @id
     throw 'Already disposed' if @disposed
-    new Promise (done) =>
+    defer (done) =>
       @constructor.remove({@id}).then () =>
         @dispose()
         done()

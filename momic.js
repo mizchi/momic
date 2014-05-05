@@ -2,7 +2,9 @@
 (function() {
   var Momic, applyHooks, defer, dequal, uuid,
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; },
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
   defer = function(f) {
     return new Promise((function(_this) {
@@ -533,6 +535,16 @@ function clone(obj) {
   })();
 
   Momic.Model = (function() {
+    Model.setup = function(opts) {
+      return defer(function(done) {
+        var db;
+        db = new Momic.DB(opts);
+        return db.init().then(function() {
+          return done();
+        });
+      });
+    };
+
     Model.setDB = function(db) {
       return Model._db = db;
     };
@@ -545,6 +557,25 @@ function clone(obj) {
       return this.getCollection().count();
     };
 
+    Model.extend = function(obj) {
+      var cls, key, val;
+      cls = (function(_super) {
+        __extends(_Class, _super);
+
+        function _Class() {
+          return _Class.__super__.constructor.apply(this, arguments);
+        }
+
+        return _Class;
+
+      })(this);
+      for (key in obj) {
+        val = obj[key];
+        cls.prototype[key] = val;
+      }
+      return cls;
+    };
+
     Model.getCollection = function() {
       var db;
       if (!this.prototype.key) {
@@ -555,7 +586,7 @@ function clone(obj) {
     };
 
     Model.find = function(query) {
-      return new Promise((function(_this) {
+      return defer((function(_this) {
         return function(done) {
           var col;
           col = _this.getCollection();
@@ -569,7 +600,7 @@ function clone(obj) {
     };
 
     Model.remove = function(query) {
-      return new Promise((function(_this) {
+      return defer((function(_this) {
         return function(done) {
           var col;
           col = _this.getCollection();
@@ -581,7 +612,7 @@ function clone(obj) {
     };
 
     Model.update = function(obj) {
-      return new Promise((function(_this) {
+      return defer((function(_this) {
         return function(done) {
           var col;
           col = _this.getCollection();
@@ -595,7 +626,7 @@ function clone(obj) {
     };
 
     Model.insert = function(obj) {
-      return new Promise((function(_this) {
+      return defer((function(_this) {
         return function(done) {
           var col;
           col = _this.getCollection();
@@ -609,7 +640,7 @@ function clone(obj) {
     };
 
     Model.findOne = function(query) {
-      return new Promise((function(_this) {
+      return defer((function(_this) {
         return function(done) {
           var col;
           col = _this.getCollection();
@@ -644,7 +675,7 @@ function clone(obj) {
       if (this.disposed) {
         throw 'Already disposed';
       }
-      return new Promise((function(_this) {
+      return defer((function(_this) {
         return function(done) {
           if (obj != null) {
             _this.updateParams(obj);
@@ -669,7 +700,7 @@ function clone(obj) {
     };
 
     Model.prototype.fetch = function(id) {
-      return new Promise((function(_this) {
+      return defer((function(_this) {
         return function(done) {
           return _this.constructor.findOne({
             id: id
@@ -688,7 +719,7 @@ function clone(obj) {
       if (this.disposed) {
         throw 'Already disposed';
       }
-      return new Promise((function(_this) {
+      return defer((function(_this) {
         return function(done) {
           return _this.constructor.remove({
             id: _this.id

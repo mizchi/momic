@@ -38,18 +38,23 @@ localforage.clear =>
           console.log 'Some items are removed'
 ```
 
-ActiveRecord like API
+You can use ActiveModel like API also.
 
 ```coffee
-Momic.Model.setDB db
-
-class User extends Momic.Model
+User = Momic.Model.extend # or extends style
   key: 'users'
 
-user = new User
-user.name = 'mizchi'
-user.age = 26
-user.save().then => console.log 'save done!'
+Momic.Model.setup({
+  name: 'app'
+  collections:
+    users: {}
+}).then =>
+  user = new User
+  user.name = 'mizchi'
+  user.age = 26
+  user.save().then => console.log 'save done!'
+
+	User.find().then (users) => console.log users
 ```
 
 See `test/test.coffee` detail.
