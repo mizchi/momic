@@ -434,6 +434,7 @@ function clone(obj) {
                 return _ref = item.id, __indexOf.call(remove_ids, _ref) < 0;
               });
               return _this.save(content).then(function() {
+                _this._updateCount(content.length);
                 return done();
               });
             });
@@ -540,8 +541,15 @@ function clone(obj) {
       return Model._db;
     };
 
-    Model.getCollection = function(collectionName) {
+    Model.count = function() {
+      return this.getCollection().count();
+    };
+
+    Model.getCollection = function() {
       var db;
+      if (!this.prototype.key) {
+        throw 'Need key';
+      }
       db = this.getDB();
       return db[this.prototype.key];
     };
@@ -714,11 +722,11 @@ function clone(obj) {
       }
       for (key in this) {
         if (this.hasOwnProperty(key)) {
-          delete obj[key];
+          delete this[key];
         }
       }
       this.disposed = true;
-      return Object.freeze(this);
+      return typeof Object.freeze === "function" ? Object.freeze(this) : void 0;
     };
 
     return Model;

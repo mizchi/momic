@@ -205,7 +205,9 @@ class Momic.Collection
         @find(func_or_obj).then (toremove) =>
           remove_ids = toremove.map (i) => i.id
           content = content.filter (item) => item.id not in remove_ids
-          @save(content).then => done()
+          @save(content).then =>
+            @_updateCount content.length
+            done()
 
   init: => defer (done) =>
     localforage.getItem @key, (content) =>
@@ -255,7 +257,10 @@ class Momic.Model
   
   @getDB: => Model._db
 
-  @getCollection: (collectionName) ->
+  @count: -> @getCollection().count()
+
+  @getCollection: ->
+    throw 'Need key' unless @::key
     db = @getDB()
     db[@::key]
 
@@ -266,7 +271,8 @@ class Momic.Model
 
   @remove: (query) -> new Promise (done) =>
     col = @getCollection()
-    col.remove(query).then => done()
+    col.remove(query).then =>
+      done()
 
   @update: (obj) -> new Promise (done) =>
     col = @getCollection()
@@ -327,9 +333,9 @@ class Momic.Model
   dispose: ->
     throw 'Already disposed' if @disposed
     for key of @ when @hasOwnProperty(key)
-      delete obj[key]
+      delete @[key]
     @disposed = true
-    Object.freeze(@)
+    Object.freeze?(@)
 
 if (typeof define) is 'function' and (typeof define.amd) is 'object' and define.amd
   define(Momic)

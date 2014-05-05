@@ -278,3 +278,65 @@ describe 'Momic.Collection', ->
             @db.items.find().then (modifiedItems) =>
               expect(modifiedItems.map (i) -> i.foo).deep.equal [42,42,42]
               done()
+
+describe 'Momic.Model', ->
+  beforeEach (done) ->
+    @db = null
+    localforage.setDriver('localStorageWrapper')
+    localforage.clear =>
+      @db = new Momic.DB
+        name: 'app'
+        collections:
+          foo: {}
+      @db.init().then =>
+        Momic.Model.setDB @db
+        done()
+
+  describe '#constructor', ->
+    it 'initialize', ->
+      class Foo extends Momic.Model
+        key: 'foo'
+      foo = new Foo
+
+  describe '#toJSON', ->
+    it 'initialize', ->
+      class Foo extends Momic.Model
+        key: 'foo'
+      foo = new Foo
+      foo.a = 3
+      foo.b = 'str'
+      expect(foo.toJSON()).deep.equal {a: 3, b: 'str'}
+
+  describe '#toJSON', ->
+    it 'initialize', ->
+      class Foo extends Momic.Model
+        key: 'foo'
+      foo = new Foo
+      foo.a = 3
+      foo.b = 'str'
+      expect(foo.toJSON()).deep.equal {a: 3, b: 'str'}
+
+  describe '#save', ->
+    it 'should add one item', (done) ->
+      class Foo extends Momic.Model
+        key: 'foo'
+      foo = new Foo
+      foo.a = 3
+      expect(Foo.count()).eq 0
+      foo.save().then =>
+        expect(Foo.count()).eq 1
+        expect(!!foo.id).eq true
+        done()
+
+  describe '#remove', ->
+    it 'should remove one item', (done) ->
+      class Foo extends Momic.Model
+        key: 'foo'
+      foo = new Foo
+      foo.a = 3
+      expect(Foo.count()).eq 0
+      foo.save().then =>
+        expect(Foo.count()).eq 1
+        foo.remove().then =>
+          expect(Foo.count()).eq 0
+          done()
