@@ -596,18 +596,15 @@
 
   describe('Momic.Model', function() {
     beforeEach(function(done) {
-      this.db = null;
       localforage.setDriver('localStorageWrapper');
       return localforage.clear((function(_this) {
         return function() {
-          _this.db = new Momic.DB({
+          return Momic.Model.setup({
             name: 'app',
             collections: {
               foo: {}
             }
-          });
-          return _this.db.init().then(function() {
-            Momic.Model.setDB(_this.db);
+          }).then(function() {
             return done();
           });
         };
@@ -628,7 +625,15 @@
           return Foo;
 
         })(Momic.Model);
-        return foo = new Foo;
+        foo = new Foo;
+        return foo.save().then((function(_this) {
+          return function() {
+            return foo.find().then(function(items) {
+              expect(items.length).eq(1);
+              return done();
+            });
+          };
+        })(this));
       });
     });
     describe('#toJSON', function() {

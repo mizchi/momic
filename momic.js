@@ -540,6 +540,7 @@ function clone(obj) {
         var db;
         db = new Momic.DB(opts);
         return db.init().then(function() {
+          Model.setDB(db);
           return done();
         });
       });

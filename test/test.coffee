@@ -281,22 +281,23 @@ describe 'Momic.Collection', ->
 
 describe 'Momic.Model', ->
   beforeEach (done) ->
-    @db = null
     localforage.setDriver('localStorageWrapper')
     localforage.clear =>
-      @db = new Momic.DB
+      Momic.Model.setup({
         name: 'app'
         collections:
           foo: {}
-      @db.init().then =>
-        Momic.Model.setDB @db
-        done()
+      }).then => done()
 
   describe '#constructor', ->
     it 'initialize', ->
       class Foo extends Momic.Model
         key: 'foo'
       foo = new Foo
+      foo.save().then =>
+        foo.find().then (items) =>
+          expect(items.length).eq 1
+          done()
 
   describe '#toJSON', ->
     it 'initialize', ->

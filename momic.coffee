@@ -255,7 +255,9 @@ class Momic.DB
 class Momic.Model
   @setup: (opts) => defer (done) =>
     db = new Momic.DB opts
-    db.init().then => done()
+    db.init().then =>
+      @setDB db
+      done()
 
   @setDB: (db) => Model._db = db
   
