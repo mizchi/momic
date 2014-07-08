@@ -14,7 +14,7 @@
   ],
   "main": "momic.js",
   "dependencies": {
-    "localforage": "~0.8.0",
-    "es6-promise": "~1.0.0"
+    "localforage": "~0.9.1",
+    "bluebird": "~2.2.1"
   }
 }
